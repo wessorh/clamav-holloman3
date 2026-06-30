@@ -2821,6 +2821,139 @@ static int cli_loadign(FILE *fs, struct cl_engine *engine, unsigned int options,
 }
 
 #define HASH_DB_TOKENS 5
+/*
+ * Load .hlo (Holloman fingerprint) signatures.
+ * Format: <32hex_fp>:<size>:<malware_name>
+ * Size 0 or * = wildcard (match any file size).
+ * Uses hm_addhash_bin() with CLI_HASH_HOLLOMAN to avoid contaminating
+ * the MD5 hash table (both use 32-char hex strings).
+ */
+static int cli_loadhlo(FILE *fs, struct cl_engine *engine, unsigned int *signo,
+                       unsigned int options, struct cli_dbio *dbio __attribute__((unused)))
+{
+    char buffer[FILEBUFF], *buffer_cpy = NULL;
+    const char *pt, *virname;
+    int ret          = CL_SUCCESS;
+    unsigned int line = 0, sigs = 0;
+    unsigned long size;
+    uint8_t fp_bin[16];
+
+    if (!fs || !engine) {
+        cli_errmsg("cli_loadhlo: NULL file or engine\n");
+        return CL_ENULLARG;
+    }
+
+    while (fgets(buffer, FILEBUFF, fs)) {
+        line++;
+        cli_chomp(buffer);
+        buffer_cpy = strdup(buffer);
+        if (!buffer_cpy) {
+            cli_errmsg("cli_loadhlo: Can't allocate memory for buffer_cpy\n");
+            ret = CL_EMEM;
+            break;
+        }
+
+        /* Skip comments and blank lines */
+        pt = cli_dbgets(buffer, buffer_cpy, 0, NULL);
+        if (!pt || *pt == '\0') {
+            free(buffer_cpy);
+            buffer_cpy = NULL;
+            continue;
+        }
+
+        /* Parse: <32hex_fp>:<size>:<malware_name> */
+        /* Token 0: 32-char hex fingerprint */
+        pt = buffer_cpy;
+        virname = strchr(pt, ':');
+        if (!virname) {
+            cli_errmsg("cli_loadhlo: Malformed line %u (missing colon after fp)\n", line);
+            free(buffer_cpy);
+            buffer_cpy = NULL;
+            continue;
+        }
+        *((char *)virname) = '\0';
+        virname++;
+
+        /* Validate fingerprint: must be exactly 32 hex chars */
+        if (strlen(pt) != 32) {
+            cli_errmsg("cli_loadhlo: Invalid fingerprint length at line %u (%zu chars, expected 32)\n",
+                       line, strlen(pt));
+            free(buffer_cpy);
+            buffer_cpy = NULL;
+            continue;
+        }
+        if (cli_hexstr_to_bytes((const char *)pt, 32, fp_bin) != CL_SUCCESS) {
+            cli_errmsg("cli_loadhlo: Invalid hex fingerprint at line %u\n", line);
+            free(buffer_cpy);
+            buffer_cpy = NULL;
+            continue;
+        }
+
+        /* Token 1: size (0 or * = wildcard) */
+        pt = virname;
+        virname = strchr(pt, ':');
+        if (!virname) {
+            cli_errmsg("cli_loadhlo: Malformed line %u (missing colon after size)\n", line);
+            free(buffer_cpy);
+            buffer_cpy = NULL;
+            continue;
+        }
+        *((char *)virname) = '\0';
+        virname++;
+
+        if (*pt == '*' || strcmp(pt, "0") == 0) {
+            size = 0; /* wildcard */
+        } else {
+            char *endptr;
+            size = strtoul(pt, &endptr, 10);
+            if (endptr == pt || *endptr != '\0') {
+                cli_errmsg("cli_loadhlo: Invalid size at line %u: %s\n", line, pt);
+                free(buffer_cpy);
+                buffer_cpy = NULL;
+                continue;
+            }
+        }
+
+        /* Token 2: malware name */
+        if (*virname == '\0') {
+            cli_errmsg("cli_loadhlo: Missing malware name at line %u\n", line);
+            free(buffer_cpy);
+            buffer_cpy = NULL;
+            continue;
+        }
+
+        /* Skip via callback */
+        if (engine->cb_sigload && engine->cb_sigload("hlo", virname, ~options & CL_DB_OFFICIAL, engine->cb_sigload_ctx) != CL_SUCCESS) {
+                cli_dbgmsg("cli_loadhlo: skipping %s due to callback\n", virname);
+                free(buffer_cpy);
+                buffer_cpy = NULL;
+                continue;
+        }
+
+        /* Store the holloman fingerprint */
+        ret = hm_addhash_bin(engine, HASH_PURPOSE_WHOLE_FILE_DETECT,
+                             fp_bin, CLI_HASH_HOLLOMAN, (uint32_t)size, virname);
+        if (ret != CL_SUCCESS) {
+            cli_errmsg("cli_loadhlo: Failed to add holloman hash at line %u\n", line);
+            free(buffer_cpy);
+            buffer_cpy = NULL;
+            continue;
+        }
+
+        sigs++;
+        free(buffer_cpy);
+        buffer_cpy = NULL;
+    }
+
+    free(buffer_cpy);
+    if (sigs == 0 && ret == CL_SUCCESS) {
+        cli_dbgmsg("cli_loadhlo: Empty database file\n");
+    }
+    cli_dbgmsg("cli_loadhlo: %u holloman signatures loaded\n", sigs);
+    if (signo) *signo += sigs;
+    return ret;
+}
+
 static int cli_loadhash(FILE *fs, struct cl_engine *engine, unsigned int *signo, hash_purpose_t purpose, unsigned int options, struct cli_dbio *dbio, const char *dbname)
 {
     const char *tokens[HASH_DB_TOKENS + 1];
@@ -4758,6 +4891,8 @@ cl_error_t cli_load(const char *filename, struct cl_engine *engine, unsigned int
     } else if (cli_strbcasestr(dbname, ".crb")) {
         ret = cli_loadcrt(fs, engine, dbio);
 
+    } else if (cli_strbcasestr(dbname, ".hlo")) {
+        ret = cli_loadhlo(fs, engine, signo, options & ~CL_DB_OFFICIAL, dbio);
     } else if (cli_strbcasestr(dbname, ".hdb") || cli_strbcasestr(dbname, ".hsb")) {
         ret = cli_loadhash(fs, engine, signo, HASH_PURPOSE_WHOLE_FILE_DETECT, options, dbio, dbname);
     } else if (cli_strbcasestr(dbname, ".hdu") || cli_strbcasestr(dbname, ".hsu")) {
@@ -4997,6 +5132,7 @@ static size_t count_signatures(const char *filepath, struct cl_engine *engine, u
 
     } else if (cli_strbcasestr(filepath, ".db") ||
                cli_strbcasestr(filepath, ".crb") ||
+               cli_strbcasestr(filepath, ".hlo") ||
                cli_strbcasestr(filepath, ".hdb") || cli_strbcasestr(filepath, ".hsb") ||
                cli_strbcasestr(filepath, ".hdu") || cli_strbcasestr(filepath, ".hsu") ||
                cli_strbcasestr(filepath, ".fp") || cli_strbcasestr(filepath, ".sfp") ||

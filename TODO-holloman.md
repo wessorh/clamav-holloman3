@@ -2,25 +2,25 @@
 
 ## Phase 1: Core Integration
 
-- [ ] Add `CLI_HASH_HOLLOMAN` to `cli_hash_type` enum in `libclamav/matcher-hash-types.h`
+- [x] Add `CLI_HASH_HOLLOMAN` to `cli_hash_type` enum in `libclamav/matcher-hash-types.h`
   - Bump `CLI_HASH_AVAIL_TYPES` to include new type
   - Add `"holloman"` to `cli_hash_name()` with 16-byte length in `cli_hash_len()`
-- [ ] Add `CLI_HASH_HOLLOMAN` cases to hash init/lookup switches in `libclamav/matcher-hash.c`
-- [ ] Add `holloman_init()` call during engine startup (order 13 default)
-- [ ] Add `holloman_fingerprint_file()` call in `libclamav/scanners.c` during file scan
+- [x] Add `CLI_HASH_HOLLOMAN` cases to hash init/lookup switches in `libclamav/matcher-hash.c`
+- [x] Add `holloman_init()` call during engine startup (order 13 default)
+- [x] Add `holloman_fingerprint_file()` call in `libclamav/scanners.c` during file scan
   - Compute 16-byte fingerprint from scanned file
   - Call `cli_hm_scan()` with `CLI_HASH_HOLLOMAN`
   - Report virus name on match
-- [ ] Add `.hlo` database loading in `libclamav/readdb.c`
+- [x] Add `.hlo` database loading in `libclamav/readdb.c`
   - Reuse `cli_loadhash()` with `HASH_PURPOSE_WHOLE_FILE_DETECT`
   - Parse format: `<cluster_id>:<size>:<malware_name>`
   - Support wildcard size (`0` or `*`)
-- [ ] Link holloman5 library in `CMakeLists.txt`
+- [x] Link holloman5 library in `CMakeLists.txt`
   - Add `-lholloman5` and include path for `holloman.h`
 
 ## Phase 2: Testing
 
-- [ ] Unit test: hash type enumeration
+- [x] Unit test: hash type enumeration
   - Verify `cli_hash_name(CLI_HASH_HOLLOMAN)` returns `"holloman"`
   - Verify `cli_hash_len(CLI_HASH_HOLLOMAN)` returns `16`
 - [ ] Unit test: signature loading
@@ -61,7 +61,7 @@
 
 ## Phase 4: Signature Generation Pipeline
 
-- [ ] Convert YARA rules to `.hlo` format
+- [x] Convert YARA rules to `.hlo` format
   - Script: extract `hollomon.cluster_id` from `.yar` files
   - Output: `<cluster_id>:0:<tag>` lines
 - [ ] Generate `.hlo` from source2yara.py `--unlabeled-only` output

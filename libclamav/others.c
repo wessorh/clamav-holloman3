@@ -497,6 +497,18 @@ struct cl_engine *cl_engine_new(void)
     new->cache_size         = CLI_DEFAULT_CACHE_SIZE;
 
     new->bytecode_security = CL_BYTECODE_TRUST_SIGNED;
+
+#ifdef HAVE_HOLLOMAN
+    /* Initialize Holloman fingerprint library (AVX2 SIMD, order 13) */
+    {
+        extern int holloman_init(uint32_t order);
+        if (holloman_init(13) != 0) {
+            cli_warnmsg("cl_engine_new: Holloman fingerprint library not available (AVX2 required)\n");
+        } else {
+            cli_dbgmsg("cl_engine_new: Holloman fingerprint library initialized (order 13)\n");
+        }
+    }
+#endif
     /* 5 seconds timeout */
     new->bytecode_timeout = 60000;
     new->bytecode_mode    = CL_BYTECODE_MODE_AUTO;
