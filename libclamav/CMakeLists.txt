@@ -456,12 +456,6 @@ if(ENABLE_SHARED_LIB)
             PUBLIC
                 Threads::Threads
                 Iconv::Iconv
-	    # Holloman fingerprint library (AVX2 SIMD)
-	    if(HOLLOMAN5_LIB)
-	        target_link_libraries( clamav PUBLIC ${HOLLOMAN5_LIB} )
-	        target_include_directories( clamav PRIVATE /home/wessorh/work/ai/holloman5/src/common )
-	        target_compile_definitions( clamav PRIVATE HAVE_HOLLOMAN=1 )
-	    endif()
                 ${CMAKE_DL_LIBS}
                 m )
     endif()
@@ -487,11 +481,17 @@ if(ENABLE_SHARED_LIB)
         set_target_properties( clamav PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON )
     else()
         target_link_libraries( clamav PUBLIC Iconv::Iconv )
-	    if(HOLLOMAN5_LIB)
-	        target_link_libraries( clamav PUBLIC ${HOLLOMAN5_LIB} )
-	        target_include_directories( clamav PRIVATE /home/wessorh/work/ai/holloman5/src/common )
-	        target_compile_definitions( clamav PRIVATE HAVE_HOLLOMAN=1 )
-	    endif()
+
+# Holloman fingerprint library (AVX2 SIMD)
+find_library(HOLLOMAN5_LIB holloman_avx2 PATHS /home/wessorh/work/ai/holloman5/lib)
+if(HOLLOMAN5_LIB)
+    target_link_libraries( clamav PUBLIC ${HOLLOMAN5_LIB} )
+    target_include_directories( clamav PRIVATE /home/wessorh/work/ai/holloman5/src/common )
+    target_compile_definitions( clamav PRIVATE HAVE_HOLLOMAN=1 )
+    message(STATUS "Holloman5 fingerprint detection: ENABLED")
+else()
+    message(STATUS "Holloman5 fingerprint detection: NOT FOUND (build without)")
+endif()
     endif()
     if(UNIX AND NOT APPLE AND NOT AIX)
         target_link_options( clamav PRIVATE "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/libclamav.map")
@@ -594,11 +594,6 @@ if(ENABLE_STATIC_LIB)
             PUBLIC
                 Threads::Threads
                 Iconv::Iconv
-	    if(HOLLOMAN5_LIB)
-	        target_link_libraries( clamav PUBLIC ${HOLLOMAN5_LIB} )
-	        target_include_directories( clamav PRIVATE /home/wessorh/work/ai/holloman5/src/common )
-	        target_compile_definitions( clamav PRIVATE HAVE_HOLLOMAN=1 )
-	    endif()
                 ${CMAKE_DL_LIBS}
                 m )
     endif()
