@@ -28,9 +28,10 @@ typedef enum cli_hash_type {
     CLI_HASH_SHA2_256,
     CLI_HASH_SHA2_384,
     CLI_HASH_SHA2_512,
+    CLI_HASH_HOLLOMAN,
 } cli_hash_type_t;
 
-#define CLI_HASH_AVAIL_TYPES (CLI_HASH_SHA2_256 + 1)
+#define CLI_HASH_AVAIL_TYPES (CLI_HASH_HOLLOMAN + 1)
 
 /**
  * @brief Get the name of the hash type as a string.

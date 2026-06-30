@@ -39,6 +39,8 @@ const char *cli_hash_name(cli_hash_type_t type)
             return "sha2-384";
         case CLI_HASH_SHA2_512:
             return "sha2-512";
+	case CLI_HASH_HOLLOMAN:
+		return "holloman";
         default:
             return "unknown";
     }
@@ -93,6 +95,8 @@ size_t cli_hash_len(cli_hash_type_t type)
             return SHA384_HASH_SIZE;
         case CLI_HASH_SHA2_512:
             return SHA512_HASH_SIZE;
+        case CLI_HASH_HOLLOMAN:
+            return 16;
         default:
             return 0; // Invalid type
     }
@@ -114,6 +118,8 @@ cl_error_t cli_hash_type_from_name(const char *name, cli_hash_type_t *type_out)
         *type_out = CLI_HASH_SHA2_384;
     } else if ((strcasecmp(name, "sha2-512") == 0) || (strcasecmp(name, "sha512") == 0)) {
         *type_out = CLI_HASH_SHA2_512;
+	} else if (strcasecmp(name, "holloman") == 0) {
+		*type_out = CLI_HASH_HOLLOMAN;
     } else {
         return CL_EARG; // Unknown hash type name
     }
