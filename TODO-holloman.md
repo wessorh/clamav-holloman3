@@ -62,7 +62,7 @@
 ## Phase 4: Signature Generation Pipeline
 
 - [x] Convert YARA rules to `.hlo` format
-  - Script: extract `hollomon.cluster_id` from `.yar` files
+  - Script: extract `holloman.cluster_id` from `.yar` files
   - Output: `<cluster_id>:0:<tag>` lines
 - [ ] Generate `.hlo` from source2yara.py `--unlabeled-only` output
 - [ ] Test hash2yara.py → source2yara.py → .hlo pipeline end-to-end

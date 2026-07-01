@@ -54,7 +54,7 @@ Format: `<cluster_id>:<size>:<malware_name>`
 
 ### Conversion from YARA Rules
 ```bash
-grep 'hollomon.cluster_id' /tmp/malbaz-20260630.yar | \
+grep 'holloman.cluster_id' /tmp/malbaz-20260630.yar | \
   sed 's/.*"\(.*\)"/\1:0:Malicious/' > signatures.hlo
 ```
 

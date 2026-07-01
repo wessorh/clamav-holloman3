@@ -157,7 +157,7 @@ ClickHouse cluster data:
 \item \texttt{source2yara.py} --- Queries ClickHouse for all clusters from a
   given source, looks up threat categories via Redis \texttt{HGET
   @\{cluster\_id\} tg-cat}, and generates YARA rules with
-  \texttt{hollomon.cluster\_id} conditions.
+  \texttt{holloman.cluster\_id} conditions.
 \item \texttt{yar2hlo.sh} --- Extracts cluster IDs from YARA rules and
   converts them to \texttt{.hlo} format: \texttt{<32hex\_fp>:0:<tag>}.
 \end{enumerate}
