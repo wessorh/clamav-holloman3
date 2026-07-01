@@ -1095,6 +1095,7 @@ if(WIN32)
     add_subdirectory( win32/compat )
 endif()
 
+add_subdirectory( holloman )
 add_subdirectory( libclamav )
 add_subdirectory( libclamav_rust )
 
