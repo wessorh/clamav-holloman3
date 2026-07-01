@@ -39,23 +39,23 @@
 
 ## Phase 3: Validation
 
-- [ ] End-to-end: known-malicious sample detection
+- [x] End-to-end: known-malicious sample detection
   - Take a malware sample with known holloman cluster_id
   - Add its cluster_id to a `.hlo` signature file
   - Scan with ClamAV, verify `FOUND` result with correct virus name
-- [ ] End-to-end: clean sample passes
+- [x] End-to-end: clean sample passes
   - Take a clean file, verify its fingerprint is NOT in the `.hlo` database
   - Scan with ClamAV, verify `OK` result (no false positive)
-- [ ] End-to-end: wildcard size matching
+- [x] End-to-end: wildcard size matching
   - Signature with size `0` matches files of any size
   - Signature with exact size matches only that size, larger/smaller files do NOT match
-- [ ] Performance: fingerprint overhead
+- [x] Performance: fingerprint overhead
   - Measure scan time for 1,000 files with and without holloman enabled
   - Verify added time < 2ms per file (holloman5 at ~2.5 GB/s AVX2)
-- [ ] Performance: hash table lookup
+- [x] Performance: hash table lookup
   - Load 100,000 `.hlo` signatures
   - Verify lookup time remains O(1) (hashtab, not linear scan)
-- [ ] Memory: signature storage
+- [x] Memory: signature storage
   - Load 500,000 `.hlo` signatures
   - Verify memory usage < 50 MB (16 bytes per signature + overhead)
 
