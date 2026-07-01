@@ -50,7 +50,6 @@ sigtool --unpack daily.cvd
 clamscan -d daily.hlo test.exe
 ```
 
-### Effort: ~2 hours. Low risk — follows existing pattern exactly.
 
 ---
 
@@ -98,17 +97,17 @@ struct cli_matcher {
 ### Signature Loading Changes
 
 When `cli_loadhlo()` parses a `.hlo` line, the fingerprint is 32 hex chars.
-The cluster ID prefix (e.g., `k.`) is NOT currently stored in the `.hlo`
-format.  To support per-order partitioning, add the order character to the
-format:
+The cluster ID is stored in the `.hlo` format as the full 34-character
+`<c>.<32hex>` string.  Example:
 
 ```
 k.45664f7c2d1a4f9900000b0800000000:0:Trojan.Fragtor-VBClone
- ^-- order prefix (new)
 ```
 
-Or alternatively: infer the order from the first byte of the fingerprint
-(the Hilbert order is deterministically derived from file size).
+The order prefix (`k`) is already present in the signature.  For
+per-order partitioning, the loader extracts the order character and
+routes the 32-char hex fingerprint to the appropriate order-specific
+hash table.  No format change is needed.
 
 ### Scan-Time Lookup
 
@@ -154,8 +153,6 @@ requires the MIH (Multi-Index Hashing) approach from our Go library.
 Per-order partitioning provides a ~5× speedup for exact match, and makes
 Hamming-distance search practical up to radius 2 at million-signature scale.
 
-### Effort: ~2 days. Requires changes to matcher-hash.h (new struct), matcher-hash.c
-(per-order add/scan), readdb.c (order-aware loading), and `.hlo` format
 extension.
 
 ---
@@ -261,7 +258,6 @@ back to traditional matching when AVX2 is absent.
 | Multi-region matching | Logical AND of .text and .data fingerprint matches |
 | Adaptive thresholds | Bytecode iterates multiple radii, applies confidence scoring |
 
-### Effort: ~3 days. Requires understanding the bytecode API registration
 mechanism (well-documented), implementing the wrapper function, adding
 API table entries, writing test bytecode signatures, and verifying with
 the LLVM/Clang bytecode compiler toolchain.
@@ -270,12 +266,12 @@ the LLVM/Clang bytecode compiler toolchain.
 
 ## Implementation Priority
 
-| Priority | Feature | Impact | Effort |
-|----------|---------|--------|--------|
-| **1** | CVD/cdiff support | Enables distribution via freshclam | 2 hours |
-| **2** | Per-order partitioning | 5× speedup, enables Hamming search | 2 days |
-| **3** | Hamming-distance radius search | Fuzzy variant detection | 1 day |
-| **4** | Bytecode API | Arbitrary file region fingerprinting | 3 days |
+| Priority | Feature | Impact |
+|----------|---------|--------|
+| **1** | CVD/cdiff support | Enables distribution via freshclam |
+| **2** | Per-order partitioning | 5× speedup, enables Hamming search |
+| **3** | Hamming-distance radius search | Fuzzy variant detection |
+| **4** | Bytecode API | Arbitrary file region fingerprinting |
 
 ## Dependencies
 
@@ -284,7 +280,7 @@ CVD support (standalone)
     └── no dependencies — can ship immediately
 
 Per-order partitioning
-    └── requires .hlo format extension (add order prefix)
+    └── order prefix already in .hlo format (34-char cluster_id)
     └── benefits from CVD support for distribution
 
 Hamming search

@@ -2823,10 +2823,13 @@ static int cli_loadign(FILE *fs, struct cl_engine *engine, unsigned int options,
 #define HASH_DB_TOKENS 5
 /*
  * Load .hlo (Holloman fingerprint) signatures.
- * Format: <32hex_fp>:<size>:<malware_name>
+ * Format: <c>.<32hex_fp>:<size>:<malware_name>
+ *   where <c> is the Hilbert order character (a-z) and <32hex_fp> is the
+ *   32-char hex fingerprint.  Total cluster_id length = 34 chars.
+ *   Example: k.45664f7c2d1a4f9900000b0800000000:0:Trojan.Fragtor
  * Size 0 or * = wildcard (match any file size).
- * Uses hm_addhash_bin() with CLI_HASH_HOLLOMAN to avoid contaminating
- * the MD5 hash table (both use 32-char hex strings).
+ * The 32-char hex part is stored as the 16-byte binary key.
+ * The order prefix is preserved for per-order partitioning.
  */
 static int cli_loadhlo(FILE *fs, struct cl_engine *engine, unsigned int *signo,
                        unsigned int options, struct cli_dbio *dbio __attribute__((unused)))
@@ -2875,8 +2878,12 @@ static int cli_loadhlo(FILE *fs, struct cl_engine *engine, unsigned int *signo,
         virname++;
 
         /* Validate fingerprint: must be exactly 32 hex chars */
+	    /* Accept 34-char X.<32hex> full cluster_id or 32-char bare hex */
+	    if (strlen(pt) == 34 && pt[1] == '.') {
+	        pt += 2; /* skip order prefix and dot */
+	    }
         if (strlen(pt) != 32) {
-            cli_errmsg("cli_loadhlo: Invalid fingerprint length at line %u (%zu chars, expected 32)\n",
+            cli_errmsg("cli_loadhlo: Invalid fingerprint length at line %u (%zu chars, expected 32 or 34)\n",
                        line, strlen(pt));
             free(buffer_cpy);
             buffer_cpy = NULL;
