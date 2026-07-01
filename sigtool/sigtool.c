@@ -92,6 +92,7 @@ static const struct dblist_s {
     /* databases */
     {"db", 1},
     {"hdb", 1},
+    {"hlo", 1},  /* Holloman fingerprint */
     {"hdu", 1},
     {"hsb", 1},
     {"hsu", 1},

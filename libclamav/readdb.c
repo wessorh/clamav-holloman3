@@ -2877,18 +2877,15 @@ static int cli_loadhlo(FILE *fs, struct cl_engine *engine, unsigned int *signo,
         *((char *)virname) = '\0';
         virname++;
 
-        /* Validate fingerprint: must be exactly 32 hex chars */
-	    /* Accept 34-char X.<32hex> full cluster_id or 32-char bare hex */
-	    if (strlen(pt) == 34 && pt[1] == '.') {
-	        pt += 2; /* skip order prefix and dot */
+	    /* Validate cluster_id: must be exactly 34 chars, X.<32hex> format */
+	    if (strlen(pt) != 34 || pt[1] != '.') {
+	        cli_errmsg("cli_loadhlo: Invalid cluster_id at line %u (%zu chars, expected 34-char X.<32hex> format)\n",
+	                   line, strlen(pt));
+	        free(buffer_cpy);
+	        buffer_cpy = NULL;
+	        continue;
 	    }
-        if (strlen(pt) != 32) {
-            cli_errmsg("cli_loadhlo: Invalid fingerprint length at line %u (%zu chars, expected 32 or 34)\n",
-                       line, strlen(pt));
-            free(buffer_cpy);
-            buffer_cpy = NULL;
-            continue;
-        }
+	    pt += 2; /* skip order prefix and dot, leaving 32-char hex */
         if (cli_hexstr_to_bytes((const char *)pt, 32, fp_bin) != CL_SUCCESS) {
             cli_errmsg("cli_loadhlo: Invalid hex fingerprint at line %u\n", line);
             free(buffer_cpy);

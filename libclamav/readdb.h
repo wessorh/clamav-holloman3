@@ -45,6 +45,7 @@ struct cli_matcher;
     (                                    \
         cli_strbcasestr(ext, ".db") ||   \
         cli_strbcasestr(ext, ".hdb") ||  \
+        cli_strbcasestr(ext, ".hlo") ||  \
         cli_strbcasestr(ext, ".hdu") ||  \
         cli_strbcasestr(ext, ".fp") ||   \
         cli_strbcasestr(ext, ".mdb") ||  \
@@ -92,6 +93,7 @@ struct cli_matcher;
         cli_strbcasestr(ext, ".hdb") ||  \
         cli_strbcasestr(ext, ".hdu") ||  \
         cli_strbcasestr(ext, ".fp") ||   \
+        cli_strbcasestr(ext, ".hlo") ||  \
         cli_strbcasestr(ext, ".mdb") ||  \
         cli_strbcasestr(ext, ".mdu") ||  \
         cli_strbcasestr(ext, ".hsb") ||  \
