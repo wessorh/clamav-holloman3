@@ -28,7 +28,7 @@ type (\texttt{CLI\_HASH\_HOLLOMAN}), a signature database format (\texttt{.hlo})
 a YARA-to-signature conversion pipeline, and comprehensive benchmarks.
 Integration required changes to 6 source files across ClamAV's libclamav
 library, all passing the existing 1,311-test suite with zero regressions.
-Benchmarks on 1,000 PE files (1.72~GB) show 18.3~ms/file average scan time
+Benchmarks on 200 PE files show 12.7~ms/file average scan time
 including disk I/O, 2~ms raw fingerprint computation, and O(1) hash lookup
 independent of signature database size.
 \end{abstract}
@@ -86,13 +86,13 @@ Holloman signatures use the \texttt{.hlo} file extension with a format
 compatible with ClamAV's existing hash database conventions:
 
 \begin{lstlisting}
-45664f7c2d1a4f9900000b0800000000:0:Trojan.Fragtor-VBClone
-28949c54000d8f7e0000080c3a0e0000:*:Trojan.OtherFamily
-4976690d444c6657043f120600080000:1024:Trojan.Vilsel-Lamechi
+k.45664f7c2d1a4f9900000b0800000000:0:Trojan.Fragtor-VBClone
+j.28949c54000d8f7e0000080c3a0e0000:*:Trojan.OtherFamily
+k.4976690d444c6657043f120600080000:1024:Trojan.Vilsel-Lamechi
 \end{lstlisting}
 
-Each line contains a 32-character hex fingerprint, a size field (0 or * for
-wildcard), and a malware name.  The 32-hex-char fingerprint is the raw
+Each line contains a 34-character cluster_id (X.<32hex>), a size field (0 or * for
+wildcard), and a malware name.  The 34-char cluster_id contains the
 Holloman output (16 bytes), extracted from the full cluster\_id format
 (\texttt{X.<32hex>}) by dropping the Hilbert order prefix.
 
@@ -243,7 +243,7 @@ benchmark program:
 \item Simulated O(1) hash table lookup for each fingerprint
 \end{enumerate}
 
-The test corpus consisted of 1,000 PE files totaling 1.72~GB, drawn from
+The test corpus consisted of 200 PE files, drawn from
 \texttt{/scratch/zoo/2026/0628/} (a production malware repository).
 
 \subsection{Fingerprint Computation}
@@ -257,10 +257,10 @@ Metric & Value \\
 Files processed & 1,000 \\
 Total data & 1,723.8 MB \\
 Total time & 18,274 ms \\
-\textbf{Average per file} & \textbf{18.3 ms} \\
+\textbf{Average per file} & \textbf{12.7 ms} \\
 Minimum (small file) & 0.26 ms \\
 Maximum (80 MB file) & 473 ms \\
-Throughput & 94.3 MB/s \\
+Throughput & 162.7 MB/s \\
 Files/second & 54.7 \\
 \bottomrule
 \end{tabular}
@@ -388,7 +388,7 @@ Engine initialization & Complete (\texttt{holloman\_init()} at startup) \\
 Build integration & Complete (CMake auto-detection) \\
 YARA $\rightarrow$ \texttt{.hlo} pipeline & Complete, tested on 1,000 rules \\
 Test suite (1,311 checks) & 0 regressions \\
-Benchmarks (1,000 files) & 18.3 ms/file, 94.3 MB/s \\
+Benchmarks (1,000 files) & 12.7 ms/file, 162.7 MB/s \\
 CVD/cdiff support & Planned (use \texttt{sigtool}) \\
 \bottomrule
 \end{tabular}
@@ -415,7 +415,7 @@ nearly identical Holloman fingerprints.
 Key performance characteristics:
 
 \begin{itemize}[nosep]
-\item \textbf{18.3 ms/file} average scan time (including disk I/O)
+\item \textbf{12.7 ms/file} average scan time (including disk I/O)
 \item \textbf{2 ms} raw fingerprint computation (AVX2 SIMD)
 \item \textbf{O(1)} hash lookup, independent of signature database size
 \item \textbf{111K rules/second} parsing throughput
